@@ -52,6 +52,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     private Double latitude;
     private Double longtitue;
 
+    private String memo = "";
+    boolean firstRec = true;
+
     Handler handler = new Handler();
     TextView textView;
     StringBuilder src = new StringBuilder();
@@ -218,10 +221,34 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 message.setText(s);
             }else if(s.equals("コネクト")){
                 message.setText(s);
-            }else if(s.equals("伝言")){
-                message.setText(s);
+            }else if(s.equals("伝言登録")){
+                firstRec=false;
+                try {
+                    // "android.speech.action.RECOGNIZE_SPEECH" を引数にインテント作成
+                    Intent intent = new Intent(
+                            RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                    intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+
+                    // 「お話しください」の画面で表示される文字列
+                    intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "伝言をどうぞ");
+
+                    // 音声入力開始
+                    startActivityForResult(intent, REQUEST_CODE);
+                } catch (ActivityNotFoundException e) {
+                    // 非対応の場合
+                    Toast.makeText(this, "音声入力に非対応です。", Toast.LENGTH_LONG).show();
+                }
+               // memo=memo+s+"\n\n";
+            }else if(s.equals("伝言参照")){
+                message.setText(memo);
             }else {
-                message.setText("コマンドが登録されていません：" + s);
+                if(firstRec) {
+                    message.setText("コマンドが登録されていません：" + s);
+                }else{
+                    memo=memo+s+"\n\n";
+                    firstRec=true;
+                }
             }
             message.setTextSize(36.0f);
 
@@ -287,9 +314,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
     @Override
     public void onLocationChanged(Location location) {
-// 例としてラベルに取得した位置を表示
-       // message.setText(Double.toString(location.getLatitude()));
-       // message.setText(Double.toString(location.getLongitude()));
+
     }
 
     @Override
