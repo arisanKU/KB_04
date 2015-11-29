@@ -3,34 +3,22 @@ package com.example.ohta.mirrorhack01;
 import android.Manifest;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
-import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
-import android.util.Log;
+import android.text.format.Time;
 import android.view.MotionEvent;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.text.format.Time;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -308,8 +296,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 message.setText("現在の時間は\n"+date + "\nです");
             }else if(s.indexOf("占い")!=-1){
                 message.setText(s);
-            }else if(s.indexOf("コネクト")!=-1){
-                message.setText(s);
+            }else if(s.indexOf("消去")!=-1){
+                message.setText("");
             }else if(s.indexOf("伝言登録")!=-1){
                 firstRec=false;
                 try {
