@@ -3,20 +3,31 @@ package com.example.ohta.mirrorhack01;
 import android.Manifest;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Message;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.text.format.Time;
@@ -32,6 +43,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.Random;
 
 public class MainActivity extends Activity implements TextToSpeech.OnInitListener, LocationListener {
 
@@ -55,9 +67,22 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     private String memo = "";
     boolean firstRec = true;
 
+    Random r = new Random();
+
     Handler handler = new Handler();
     TextView textView;
     StringBuilder src = new StringBuilder();
+
+    SampleHandler sampleHandler = new SampleHandler();
+
+    ImageView droid ;
+    int ImgX=700;
+    int ImgY=700;
+    int speed=10;
+    int radian=0;
+    int mvCnt=0;
+    boolean mv=true;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,11 +97,34 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         message.findViewById(R.id.message);
 
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        droid = (ImageView)findViewById(R.id.droid01);
+        droid.setImageResource(R.drawable.droid01);
+        /*ViewGroup.LayoutParams params = droid.getLayoutParams();
+        params.width =droid.getWidth()/3;
+        params.height =droid.getHeight()/3;
+        droid.setLayoutParams(params);*/
+        //droid.setMaxHeight(droid.getHeight()/2);
+        //droid.setMaxWidth(droid.getWidth()/2);
+        droid.setScaleX(0.05f);
+        droid.setScaleY(0.05f);
+       // droid.setTranslationX(1);
+        //droid.setTranslationY(1);
+        droid.setX(ImgX);
+        droid.setY(ImgY);//-700~700
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_UP) {
+            if(r.nextBoolean()) {
+                droid.setImageResource(R.drawable.droid_speak);
+            }else{
+                droid.setImageResource(R.drawable.droid_hear);
+            }
+            droid.setScaleX(0.1f);
+            droid.setScaleY(0.1f);
+            droid.invalidate();
+            mv=false;
             try {
                 // "android.speech.action.RECOGNIZE_SPEECH" を引数にインテント作成
                 Intent intent = new Intent(
@@ -93,13 +141,54 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 // 非対応の場合
                 Toast.makeText(this, "音声入力に非対応です。", Toast.LENGTH_LONG).show();
             }
-        }
+        };
         return super.onTouchEvent(event);
 
     }
 
+    public class SampleHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+           /* droid.setX(r.nextInt(1400)-700);
+            droid.setY(r.nextInt(1400)-700);*/
+            if(mv) {
+                ImgX += speed * Math.cos(radian);
+                ImgY += speed * Math.sin(radian);
+                if (ImgX > 700 || ImgX < -700 || ImgY > 700 || ImgY < -700) {
+                    radian = radian * (-1) + r.nextInt(90);
+                    mvCnt = 0;
+                }
+                if (mvCnt > 12) {
+                    radian = radian + r.nextInt(90);
+                    mvCnt = 0;
+                }
+                droid.setX((float) ImgX);
+                droid.setY((float) ImgY);
+                mvCnt += 1;
+                droid.invalidate();  //2.
+                if (sampleHandler != null) sampleHandler.sleep(400);  //3//
+            }// .
+        }
+
+        //スリープメソッド
+        public void sleep(long delayMills) {
+            //使用済みメッセージの削除
+            removeMessages(0);
+            sendMessageDelayed(obtainMessage(0),delayMills);  //4.
+        }
+    }
+    @Override
+    public void onResume() {
+        super.onResume();
+        //定期処理ハンドラの生成と実行
+        sampleHandler=new SampleHandler();
+        sampleHandler.sleep(0);
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+            droid.setImageResource(R.drawable.droid_speak);
+        droid.invalidate();
         // インテントの発行元を限定
         if (requestCode == REQUEST_CODE && resultCode == RESULT_OK) {
 
@@ -110,7 +199,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             message.setTextSize(64.0f);
             // 表示
             //Toast.makeText(this, s, Toast.LENGTH_LONG).show();
-            if (s.equals("天気")) {
+            if (s.indexOf("天気")!=-1) {
                 //座標取得
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -212,16 +301,16 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                     };
                 }).start();
 
-            }else if(s.equals("時間")){
+            }else if(s.indexOf("時間")!=-1){
                 time.setToNow();
                 String date = time.year + "年" + (time.month+1) + "月" + time.monthDay + "日　"+
                 time.hour + "時" + time.minute + "分" + time.second + "秒";
                 message.setText("現在の時間は\n"+date + "\nです");
-            }else if(s.equals("占い")){
+            }else if(s.indexOf("占い")!=-1){
                 message.setText(s);
-            }else if(s.equals("コネクト")){
+            }else if(s.indexOf("コネクト")!=-1){
                 message.setText(s);
-            }else if(s.equals("伝言登録")){
+            }else if(s.indexOf("伝言登録")!=-1){
                 firstRec=false;
                 try {
                     // "android.speech.action.RECOGNIZE_SPEECH" を引数にインテント作成
@@ -240,8 +329,10 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                     Toast.makeText(this, "音声入力に非対応です。", Toast.LENGTH_LONG).show();
                 }
                // memo=memo+s+"\n\n";
-            }else if(s.equals("伝言参照")){
+            }else if(s.indexOf("伝言参照")!=-1) {
                 message.setText(memo);
+            }else if(s.indexOf("きれい")!=-1){
+                    s="You are the most beautiful !!";
             }else {
                 if(firstRec) {
                     message.setText("コマンドが登録されていません：" + s);
@@ -251,7 +342,10 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 }
             }
             message.setTextSize(36.0f);
-
+            mv=true;
+            droid.setScaleX(0.05f);
+            droid.setScaleY(0.05f);
+            droid.setImageResource(R.drawable.droid02);
             // 音声合成して発音
             if(tts.isSpeaking()) {
                 tts.stop();
